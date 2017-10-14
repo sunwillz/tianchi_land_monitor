@@ -14,9 +14,9 @@ from keras.utils.np_utils import to_categorical
 from scipy import misc
 import re
 
-image_size = 256  # 输入图像尺寸大小
+image_size = 160  # 输入图像尺寸大小
 image_channel = 3  # 输入图像通道数
-label_size = 256  # 输出图像尺寸大小
+label_size = 160  # 输出图像尺寸大小
 label_channel = 2  # 输出图像通道数
 n_classes = 2
 
@@ -176,7 +176,7 @@ def split_image(img, to_dir, image_size):
     :return:
     """
 
-    for i in range(len(img) / image_size):
+    for i in range(len(img) / image_size+1):
         for j in range(len(img[0]) / image_size):
             im_name = str(i) + '_' + str(j) + '_' + str(image_size) + '_.jpg'
             cv2.imwrite(to_dir + im_name, scale_percentile(
@@ -208,22 +208,22 @@ def split_image_overlap_window(img, to_dir):
 if __name__ == '__main__':
     ## 将(960,960,3)的小图片拼接成(5106,14400,3)的大图片
     to_dir = './data_{}/'.format(image_size)
-    # image_2015 = concat_jpg_to_largefile('./label/2015/', to_dir, '2015.jpg')
-    # print image_2015.shape, image_2015.max()##(5106, 14400, 3),
-    #
-    # image_2017 = concat_jpg_to_largefile('./label/2017/', to_dir, '2017_with_biaozhu.jpg', flag=True)
-    # print image_2017.shape, image_2017.max()
-    # assert image_2015.shape == image_2017.shape
-    #
-    # file_name = '../land/data/preliminary/quickbird2015.tif'
-    # im_2015 = load_testing_data(file_name)
-    # file_name = '../land/data/preliminary/quickbird2017.tif'
-    # im_2017 = load_testing_data(file_name)
-    #
-    # split_image(im_2015[:, :14400, :], to_dir+'images/2015/', image_size)
-    # split_image(im_2017[:, :14400, :], to_dir+'images/2017/', image_size)
-    # split_image(image_2015, to_dir+'labels/2015/', image_size)
-    # split_image(image_2017, to_dir+'labels/2017/', image_size)
+    image_2015 = concat_jpg_to_largefile('./label/2015/', to_dir, '2015.jpg')
+    print image_2015.shape, image_2015.max()##(5106, 14400, 3),
+
+    image_2017 = concat_jpg_to_largefile('./label/2017/', to_dir, '2017_with_biaozhu.jpg', flag=True)
+    print image_2017.shape, image_2017.max()
+    assert image_2015.shape == image_2017.shape
+
+    file_name = '../land/data/preliminary/quickbird2015.tif'
+    im_2015 = load_testing_data(file_name)
+    file_name = '../land/data/preliminary/quickbird2017.tif'
+    im_2017 = load_testing_data(file_name)
+
+    split_image(im_2015[:, :14400, :], to_dir+'images/2015/', image_size)
+    split_image(im_2017[:, :14400, :], to_dir+'images/2017/', image_size)
+    split_image(image_2015, to_dir+'labels/2015/', image_size)
+    split_image(image_2017, to_dir+'labels/2017/', image_size)
 
     ## 得到公共的图片
     images_list_2015 = np.array(os.listdir(to_dir+'images/2015/'))

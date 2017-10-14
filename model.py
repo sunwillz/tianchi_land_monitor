@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 
-"""
-ResNet based FCN.
-"""
 from keras.models import Model
 from keras.layers import (Input, Activation, Reshape, Conv2D, Lambda, Add)
 import tensorflow as tf
 import keras.backend as K
 # import pydensecrf.densecrf as dcrf
 from resnet50 import ResNet50
+from deeplabv2 import DeeplabV2
 # from crf_layers import CrfLayer
 import numpy as np
 

@@ -2,6 +2,7 @@
 
 from train import *
 from keras.preprocessing.image import ImageDataGenerator
+from keras.layers import Activation, Permute, Reshape
 
 
 def data_augmentation():

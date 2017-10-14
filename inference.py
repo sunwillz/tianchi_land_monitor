@@ -120,26 +120,26 @@ def submit_formation(pred, name_list, image_size):
 if __name__ == "__main__":
 
     ## 分割数据
-    # file_name = '../land/data/preliminary/quickbird2015.tif'
-    # im_2015 = load_testing_data(file_name)
-    # file_name = '../land/data/preliminary/quickbird2017.tif'
-    # im_2017 = load_testing_data(file_name)
-    #
-    # split_image(im_2015, './data_{}/test/images/2015/'.format(image_size), image_size)
-    # split_image(im_2017, './data_{}/test/images/2017/'.format(image_size), image_size)
-    #
-    # ## 创建测试数据
-    # images_list_2015 = np.array(os.listdir('./data_{}/test/images/2015/'.format(image_size)))
-    # images_list_2017 = np.array(os.listdir('./data_{}/test/images/2017/'.format(image_size)))
-    # reg = r'[0-9]{0,2}_[0-9]{0,2}_[0-9]{3}_.jpg'
-    # with open('./data_{}/test/test_2015.txt'.format(image_size), 'w') as f:
-    #     for line in images_list_2015:
-    #         if re.match(reg, line):
-    #             f.write('2015/'+line+'\n')
-    # with open('./data_{}/test/test_2017.txt'.format(image_size), 'w') as f:
-    #     for line in images_list_2015:
-    #         if re.match(reg, line):
-    #             f.write('2017/'+line+'\n')
-    tf.app.run()
+    file_name = '../land/data/preliminary/quickbird2015.tif'
+    im_2015 = load_testing_data(file_name)
+    file_name = '../land/data/preliminary/quickbird2017.tif'
+    im_2017 = load_testing_data(file_name)
+
+    split_image(im_2015, './data_{}/test/images/2015/'.format(image_size), image_size)
+    split_image(im_2017, './data_{}/test/images/2017/'.format(image_size), image_size)
+
+    ## 创建测试数据
+    images_list_2015 = np.array(os.listdir('./data_{}/test/images/2015/'.format(image_size)))
+    images_list_2017 = np.array(os.listdir('./data_{}/test/images/2017/'.format(image_size)))
+    reg = r'[0-9]{0,2}_[0-9]{0,2}_[0-9]{3}_.jpg'
+    with open('./data_{}/test/test_2015.txt'.format(image_size), 'w') as f:
+        for line in images_list_2015:
+            if re.match(reg, line):
+                f.write('2015/'+line+'\n')
+    with open('./data_{}/test/test_2017.txt'.format(image_size), 'w') as f:
+        for line in images_list_2015:
+            if re.match(reg, line):
+                f.write('2017/'+line+'\n')
+    # tf.app.run()
 
 

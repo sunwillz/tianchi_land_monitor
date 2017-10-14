@@ -8,14 +8,13 @@ from keras.callbacks import ReduceLROnPlateau
 from data_process import *
 from model import *
 
-
 learning_rate = 1e-5  # 学习率
 decay = 0
 batch_size = 8
 valid_batch_size = 100  # 验证集样本数
 epochs = 10  # 训练轮数
 
-model_name = 'model_{}.h5'.format(image_size)
+model_name = 'deeplabv2_model_{}.h5'.format(image_size)
 training_dir = './data_{}/'.format(image_size)
 train_file = 'train.txt'
 validation_dir = './data_{}/'.format(image_size)
@@ -63,7 +62,6 @@ def f1(y_true, y_pred):
 
 
 def main(args):
-
     args = get_arguments()
 
     training_data = Dataset_reader(dataset_dir=training_dir,
@@ -88,11 +86,15 @@ def main(args):
     print 'validation max:', valid_images.max()
     print 'validation lable max:', valid_annotations.max()
 
-    model = make_fcn_resnet(input_shape=(image_size, image_size, image_channel),
-                            nb_labels=label_channel,
-                            use_pretraining=True,
-                            freeze_base=False
-                            )
+    # model = make_fcn_resnet(input_shape=(image_size, image_size, image_channel),
+    #                         nb_labels=label_channel,
+    #                         use_pretraining=True,
+    #                         freeze_base=False
+    #                         )
+    model = DeeplabV2(input_shape=(image_size, image_size, image_channel),
+                      classes=label_channel,
+                      weights=None,
+                      )
     if os.path.exists(save_path + model_name):
         model.load_weights(save_path + model_name)
         print 'model restored from ', save_path, model_name
@@ -138,7 +140,7 @@ def main(args):
     print('Test accuracy:', accuracy)
 
     model.save_weights(save_path + model_name)
-    print 'model saved at ', save_path+model_name
+    print 'model saved at ', save_path + model_name
 
     print('Test image shape:', test_images.shape, test_images.max())
     print('Test label shape:', test_annotations.shape, test_annotations.max())
