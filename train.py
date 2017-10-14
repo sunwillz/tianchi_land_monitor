@@ -2,18 +2,12 @@
 """
 train.py:训练模型
 """
-import keras
 import argparse
-import keras.backend as K
+import keras
 from keras.callbacks import ReduceLROnPlateau
 from data_process import *
 from model import *
 
-image_size = 224  # 输入图像尺寸大小
-image_channel = 3  # 输入图像通道数
-label_size = 224  # 输出图像尺寸大小
-label_channel = 2  # 输出图像通道数
-n_classes = 2
 
 learning_rate = 1e-5  # 学习率
 decay = 0
@@ -21,10 +15,10 @@ batch_size = 8
 valid_batch_size = 100  # 验证集样本数
 epochs = 10  # 训练轮数
 
-model_name = 'model_best.h5'
-training_dir = './data_224/'
+model_name = 'model_{}.h5'.format(image_size)
+training_dir = './data_{}/'.format(image_size)
 train_file = 'train.txt'
-validation_dir = './data_224/'
+validation_dir = './data_{}/'.format(image_size)
 valid_file = 'valid.txt'
 save_path = './logs/'  # 训练日志和模型存放目录
 result_dir = './result/'  # 预测结果存放目录
@@ -36,15 +30,17 @@ def get_arguments():
     Returns:
       A list of parsed arguments.
     """
-    parser = argparse.ArgumentParser(description="DeepLabLFOV Network")
+    parser = argparse.ArgumentParser(description="resnet based fcn Network")
     parser.add_argument("--epochs", type=int, default=epochs)
-
+    parser.add_argument("--image-size", type=int, default=image_size)
+    parser.add_argument("--learning_rate", type=float, default=learning_rate)
     return parser.parse_args()
 
 
 def f1(y_true, y_pred):
     y_true = y_true[:, :, 1]
     y_pred = y_pred[:, :, 1]
+
     # 将标签值展平
     y_true = K.reshape(y_true, shape=[1, -1])
     y_pred = K.reshape(y_pred, shape=[1, -1])
@@ -67,8 +63,9 @@ def f1(y_true, y_pred):
 
 
 def main(args):
+
     args = get_arguments()
-    ## 输入向量（_, 224，224，3）
+
     training_data = Dataset_reader(dataset_dir=training_dir,
                                    file_name=train_file,
                                    image_size=image_size,
@@ -81,20 +78,6 @@ def main(args):
                                      image_channel=image_channel,
                                      label_channel=label_channel
                                      )
-
-    ## 输入向量（_, 960，960，3）
-    # training_dir = './train/'
-    # validation_dir = './validation/'
-    # training_data = Dataset_reader(dataset_dir=training_dir,
-    #                                image_size=image_size,
-    #                                image_channel=image_channel,
-    #                                label_channel=label_channel
-    #                                )
-    # validation_data = Dataset_reader(dataset_dir=validation_dir,
-    #                                  image_size=image_size,
-    #                                  image_channel=image_channel,
-    #                                  label_channel=label_channel
-    #                                  )
 
     train_images, train_annotations = training_data.get_all_data()
     valid_images, valid_annotations = validation_data.get_random_batch(valid_batch_size)
@@ -113,7 +96,7 @@ def main(args):
     if os.path.exists(save_path + model_name):
         model.load_weights(save_path + model_name)
         print 'model restored from ', save_path, model_name
-    adam = keras.optimizers.Adam(lr=learning_rate, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
+    adam = keras.optimizers.Adam(lr=args.learning_rate, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
     model.compile(loss=keras.losses.categorical_crossentropy,
                   optimizer=adam,
                   metrics=[f1, 'accuracy'])
@@ -155,7 +138,7 @@ def main(args):
     print('Test accuracy:', accuracy)
 
     model.save_weights(save_path + model_name)
-    print 'model saved at ', save_path
+    print 'model saved at ', save_path+model_name
 
     print('Test image shape:', test_images.shape, test_images.max())
     print('Test label shape:', test_annotations.shape, test_annotations.max())

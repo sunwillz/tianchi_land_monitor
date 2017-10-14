@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""
+数据预处理：图片生成、分割、拼接、读取
+"""
 
 import os
 import cv2
@@ -10,6 +13,13 @@ from PIL import Image
 from keras.utils.np_utils import to_categorical
 from scipy import misc
 import re
+
+image_size = 256  # 输入图像尺寸大小
+image_channel = 3  # 输入图像通道数
+label_size = 256  # 输出图像尺寸大小
+label_channel = 2  # 输出图像通道数
+n_classes = 2
+
 
 class Dataset_reader:
 
@@ -30,7 +40,6 @@ class Dataset_reader:
         if not test: #预测阶段不读取标签
             self.read_labels()
 
-    ## 224*224
     def read_images(self):
         with open(os.path.join(self.dataset_dir, self.filename)) as f:
             images = f.readlines()
@@ -39,8 +48,10 @@ class Dataset_reader:
             img = pltimage.imread(os.path.join(self.dataset_dir, 'images/' + image))
             # 图像中心化
             img = scale_percentile(img)
-            img = img.reshape([self.image_size, self.image_size, self.image_channel])
-            self.images.append(img)
+            img_arr = np.zeros(shape=[self.image_size, self.image_size, self.image_channel])
+            img_arr[:img.shape[0], :img.shape[1], :img.shape[2]] = img
+            # img = img.reshape([self.image_size, self.image_size, self.image_channel])
+            self.images.append(img_arr)
         self.images = np.array(self.images)
         print self.images.shape
 
@@ -56,35 +67,6 @@ class Dataset_reader:
             self.labels.append(label)
         self.labels = np.array(self.labels)
         print self.labels.shape
-
-    ## 960*960
-    # def read_images(self):
-    #     file_list = os.listdir(os.path.join(self.dataset_dir, 'images/'))
-    #     for filename in file_list: # 2015,2017
-    #         if not os.path.isdir(os.path.join(self.dataset_dir, 'images/'+filename)):continue
-    #         images_list = os.listdir(os.path.join(self.dataset_dir, 'images/'+filename))
-    #         for image in images_list:
-    #             img = pltimage.imread(os.path.join(self.dataset_dir, 'images/' + filename+'/' + image))
-    #             img = scale_percentile(img)
-    #             img = img.reshape([self.image_size, self.image_size, self.image_channel])
-    #             self.images.append(img)
-    #     self.images = np.array(self.images)
-    #     print self.images.shape
-    #
-    # def read_labels(self):
-    #     file_list = os.listdir(os.path.join(self.dataset_dir, 'labels/'))
-    #     for filename in file_list:  # 2015,2017
-    #         if not os.path.isdir(os.path.join(self.dataset_dir, 'labels/' + filename)):continue
-    #         images_list = os.listdir(os.path.join(self.dataset_dir, 'labels/' + filename))
-    #         for image in images_list:
-    #             label = pltimage.imread(os.path.join(self.dataset_dir, 'labels/' + filename+'/'+image))
-    #             label = (label[:, :, 0] > 0).astype(np.uint8) # 取其中一个通道
-    #             label = to_categorical(label, num_classes=2)
-    #             label = label.reshape([self.image_size, self.image_size, self.label_channel])
-    #             self.labels.append(label)
-    #     self.labels = np.array(self.labels)
-    #     print self.labels.shape
-
 
     def normlization(self, x): # 对其中一个通道做图像归一化
         x_scaled = np.empty(shape=x.shape)
@@ -135,7 +117,6 @@ def load_testing_data(file_name):
 def concat_jpg_to_largefile(image_dir, to_dir, to_name, flag=False):
     if os.path.exists(os.path.join(to_dir, to_name)):
         return pltimage.imread(os.path.join(to_dir, to_name))
-
 
     images_list = os.listdir(image_dir)
 
@@ -189,21 +170,22 @@ def scale_percentile(matrix):
     return matrix
 
 
-def split_tiff_file(img, to_dir):
+def split_image(img, to_dir, image_size):
     """
-    将大的高分辨率卫星图像分割成224*224的小图片,同样的区域命名相同，分别放在不同文件夹下
+    将大的高分辨率卫星图像分割成image_size*image_size的小图片,同样的区域命名相同，分别放在不同文件夹下
     :return:
     """
-    img_size = 224  # 15106/ 224 =67...98  5106/224=22..178
-    for i in range(len(img) / img_size):
-        for j in range(len(img[0]) / img_size):
-            im_name = str(i) + '_' + str(j) + '_' + str(img_size) + '_.jpg'
+
+    for i in range(len(img) / image_size):
+        for j in range(len(img[0]) / image_size):
+            im_name = str(i) + '_' + str(j) + '_' + str(image_size) + '_.jpg'
             cv2.imwrite(to_dir + im_name, scale_percentile(
-                img[i * img_size:i * img_size + img_size, j * img_size:j * img_size + img_size, :3]) * 255)
+                img[i * image_size:i * image_size + image_size,
+                j * image_size:j * image_size + image_size, :3]) * 255)
 
 
 ## 数据增广：采用重叠滑动窗口分割大图片，重叠区域大小为30*40
-def split_tiff_file_overlap_window(img, to_dir):
+def split_image_overlap_window(img, to_dir):
     """
     224-30 = 194，224-40 = 184
     14400-224 = 14176= 77*184+8
@@ -225,28 +207,29 @@ def split_tiff_file_overlap_window(img, to_dir):
 
 if __name__ == '__main__':
     ## 将(960,960,3)的小图片拼接成(5106,14400,3)的大图片
-    image_2015 = concat_jpg_to_largefile('./label/2015/', './data_224/', '2015.jpg')
-    print image_2015.shape ##(5106, 14400, 3),image_2015.max()
-
-    image_2017 = concat_jpg_to_largefile('./label/2017/', './data_224/', '2017_with_biaozhu.jpg', flag=True)
-    print image_2017.shape, image_2017.max()
-    assert image_2015.shape == image_2017.shape
-
-    file_name = '../land/data/preliminary/quickbird2015.tif'
-    im_2015 = load_testing_data(file_name)
-    file_name = '../land/data/preliminary/quickbird2017.tif'
-    im_2017 = load_testing_data(file_name)
-
-    split_tiff_file_overlap_window(im_2015[:, :14400, :], './data_224/images/2015/')
-    split_tiff_file_overlap_window(im_2017[:, :14400, :], './data_224/images/2017/')
-    split_tiff_file_overlap_window(image_2015, './data_224/labels/2015/')
-    split_tiff_file_overlap_window(image_2017, './data_224/labels/2017/')
+    to_dir = './data_{}/'.format(image_size)
+    # image_2015 = concat_jpg_to_largefile('./label/2015/', to_dir, '2015.jpg')
+    # print image_2015.shape, image_2015.max()##(5106, 14400, 3),
+    #
+    # image_2017 = concat_jpg_to_largefile('./label/2017/', to_dir, '2017_with_biaozhu.jpg', flag=True)
+    # print image_2017.shape, image_2017.max()
+    # assert image_2015.shape == image_2017.shape
+    #
+    # file_name = '../land/data/preliminary/quickbird2015.tif'
+    # im_2015 = load_testing_data(file_name)
+    # file_name = '../land/data/preliminary/quickbird2017.tif'
+    # im_2017 = load_testing_data(file_name)
+    #
+    # split_image(im_2015[:, :14400, :], to_dir+'images/2015/', image_size)
+    # split_image(im_2017[:, :14400, :], to_dir+'images/2017/', image_size)
+    # split_image(image_2015, to_dir+'labels/2015/', image_size)
+    # split_image(image_2017, to_dir+'labels/2017/', image_size)
 
     ## 得到公共的图片
-    images_list_2015 = np.array(os.listdir('./data_224/images/2015/'))
-    label_list_2015 = np.array(os.listdir('./data_224/labels/2015/'))
-    images_list_2017 = np.array(os.listdir('./data_224/images/2017/'))
-    label_list_2017 = np.array(os.listdir('./data_224/labels/2017/'))
+    images_list_2015 = np.array(os.listdir(to_dir+'images/2015/'))
+    label_list_2015 = np.array(os.listdir(to_dir+'labels/2015/'))
+    images_list_2017 = np.array(os.listdir(to_dir+'images/2017/'))
+    label_list_2017 = np.array(os.listdir(to_dir+'labels/2017/'))
 
     common_2015 = np.intersect1d(images_list_2015, label_list_2015)
     common_2017 = np.intersect1d(images_list_2017, label_list_2017)
@@ -265,12 +248,12 @@ if __name__ == '__main__':
     valid = common[int(common.shape[0]*0.85):]
     print valid.shape
     reg = r'([0-9]{4})\/[0-9]{0,2}_[0-9]{0,2}_[0-9]{3}_.jpg'
-    with open('./data_224/train.txt', 'w') as f:
+    with open(to_dir+'train.txt', 'w') as f:
         for line in train:
             if re.match(reg, line):
                 f.write(line+'\n')
 
-    with open('./data_224/valid.txt', 'w') as f:
+    with open(to_dir+'valid.txt', 'w') as f:
         for line in valid:
             if re.match(reg, line):
                 f.write(line+'\n')
