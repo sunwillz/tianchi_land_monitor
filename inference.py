@@ -3,68 +3,78 @@
 from train import *
 from data_process import *
 
-testing_dir = './data_{}/test/'.format(image_size)
 testing_file_2015 = 'test_2015.txt'
 testing_file_2017 = 'test_2017.txt'
-# model_list = ['model_224.h5', 'model_2_224.h5', 'model_3_224.h5', 'model_4_224.h5', 'model_5_224.h5']
-model_list = ['model_224.h5', 'model_256.h5']
+model_list = ['deeplabv2_model_160.h5', 'deeplabv2_model_256.h5', 'resnet_model_224.h5', 'resnet_model_256.h5']
 
 
 def main(argv=None):
-    img_list_2015 = []
-    with open('./data_{}/test/test_2015.txt'.format(image_size)) as f:
-        lines = f.readlines()
-        for line in lines:
-            img_list_2015.append((line.split('/')[1].strip()).split('.')[0])
-    img_list_2017 = []
-    with open('./data_{}/test/test_2017.txt'.format(image_size)) as f:
-        lines = f.readlines()
-        for line in lines:
-            img_list_2017.append((line.split('/')[1].strip()).split('.')[0])
-    assert len(img_list_2015) == len(img_list_2017)
 
-    ## 准备数据
-    testSet_2015 = Dataset_reader(dataset_dir=testing_dir,
-                                  file_name=testing_file_2015,
-                                  image_size=image_size,
-                                  image_channel=image_channel,
-                                  label_channel=label_channel,
-                                  test=True
-                                  )
-    testSet_2017 = Dataset_reader(dataset_dir=testing_dir,
-                                  file_name=testing_file_2017,
-                                  image_size=image_size,
-                                  image_channel=image_channel,
-                                  label_channel=label_channel,
-                                  test=True
-                                  )
+    pred_2015_summary = np.empty(shape=(len(model_list), 5106, 15106))
+    pred_2017_summary = np.empty(shape=(len(model_list), 5106, 15106))
 
-    ## 加载模型
-    model = make_fcn_resnet(input_shape=(image_size, image_size, image_channel),
-                            nb_labels=label_channel,
-                            use_pretraining=True,
-                            freeze_base=False
-                            )
+    for i, model_name in enumerate(model_list):
+        image_size = int(model_name.split('.')[0][-3:])
+        print('images size:', image_size)
+        testing_dir = './data_{}/test/'.format(image_size)
+        img_list_2015 = []
+        with open('./data_{}/test/test_2015.txt'.format(image_size)) as f:
+            lines = f.readlines()
+            for line in lines:
+                img_list_2015.append((line.split('/')[1].strip()).split('.')[0])
+        img_list_2017 = []
+        with open('./data_{}/test/test_2017.txt'.format(image_size)) as f:
+            lines = f.readlines()
+            for line in lines:
+                img_list_2017.append((line.split('/')[1].strip()).split('.')[0])
+        assert len(img_list_2015) == len(img_list_2017)
 
-    test_images_2015 = np.array(testSet_2015.get_all_data(label=False))
-    test_images_2017 = np.array(testSet_2017.get_all_data(label=False))
-    assert test_images_2015.shape[0] == test_images_2017.shape[0]
-    print('Test_images:', test_images_2015.shape, test_images_2015.max())
+        ## 准备数据
+        testSet_2015 = Dataset_reader(dataset_dir=testing_dir,
+                                      file_name=testing_file_2015,
+                                      image_size=image_size,
+                                      image_channel=image_channel,
+                                      label_channel=label_channel,
+                                      test=True
+                                      )
+        testSet_2017 = Dataset_reader(dataset_dir=testing_dir,
+                                      file_name=testing_file_2017,
+                                      image_size=image_size,
+                                      image_channel=image_channel,
+                                      label_channel=label_channel,
+                                      test=True
+                                      )
 
-    pred_2015_summary = np.empty(shape=(len(model_list), test_images_2015.shape[0], image_size, image_size, label_channel))
-    pred_2017_summary = np.empty(shape=(len(model_list), test_images_2015.shape[0], image_size, image_size, label_channel))
+        test_images_2015 = np.array(testSet_2015.get_all_data(label=False))
+        test_images_2017 = np.array(testSet_2017.get_all_data(label=False))
+        assert test_images_2015.shape[0] == test_images_2017.shape[0]
+        print('Test_images:', test_images_2015.shape, test_images_2015.max())
 
-    for i,model_name in enumerate(model_list):
         if os.path.exists(save_path + model_name):
+            if 'deeplab' in model_name:
+                ## 加载模型
+                model = DeeplabV2(input_shape=(image_size, image_size, image_channel),
+                                  classes=label_channel,
+                                  weights=None,
+                                  )
+            else:
+                model = make_fcn_resnet(input_shape=(image_size, image_size, image_channel),
+                                        nb_labels=label_channel,
+                                        use_pretraining=True,
+                                        freeze_base=False
+                                        )
+
             model.load_weights(save_path + model_name)
             print 'model restored from ', save_path, ' model name:', model_name
 
         ## 预测阶段
-        pred_2015 = model.predict(test_images_2015)
-        pred_2017 = model.predict(test_images_2017)
-        pred_2015_summary[i] = pred_2015
-        pred_2017_summary[i] = pred_2017
-
+        pred_2015 = model.predict(test_images_2015, batch_size=4)
+        pred_2017 = model.predict(test_images_2017, batch_size=4)
+        pred_2015_summary[i] = submit_formation(pred_2015[:, :, :, 1], img_list_2015,
+                                             image_size=image_size)
+        pred_2017_summary[i] = submit_formation(pred_2017[:, :, :, 1], img_list_2017,
+                                             image_size=image_size)
+    assert pred_2015_summary.shape == pred_2017_summary.shape
     print pred_2015_summary.shape
     print('summary the result...')
 
@@ -84,15 +94,16 @@ def main(argv=None):
     # print('prediction has saved!')
 
     ## 将预测结果根据区域名字拼接成大数组
-    submit_array_2015 = submit_formation((pred_2015[:, :, :, 1] > 0.5).astype(np.uint8), img_list_2015, image_size=image_size)
-    submit_array_2017 = submit_formation((pred_2017[:, :, :, 1] > 0.5).astype(np.uint8), img_list_2017, image_size=image_size)
+    # submit_array_2015 = submit_formation((pred_2015 > 0.8).astype(np.uint8), img_list_2015, image_size=image_size)
+    # submit_array_2017 = submit_formation((pred_2017 > 0.8).astype(np.uint8), img_list_2017, image_size=image_size)
+    pred_2015 = (pred_2015 > 0.8).astype(np.uint8)
+    pred_2017 = (pred_2017 > 0.8).astype(np.uint8)
+    assert ((pred_2015 > pred_2015.min()) & (pred_2015 < pred_2015.max())).sum() == 0
+    assert ((pred_2017 > pred_2017.min()) & (pred_2017 < pred_2017.max())).sum() == 0
 
-    assert ((submit_array_2015 > submit_array_2015.min()) & (submit_array_2015 < submit_array_2015.max())).sum() == 0
-    assert ((submit_array_2017 > submit_array_2017.min()) & (submit_array_2017 < submit_array_2017.max())).sum() == 0
-
-    diff = ((submit_array_2017 == 1) & (submit_array_2015 == 0)).astype(np.uint8)
+    diff = ((pred_2017 == 1) & (pred_2015 == 0)).astype(np.uint8)
     print diff.shape, diff.mean(), diff.max()
-    tiff.imsave('submit_224_256.tiff', diff)
+    tiff.imsave('submit_ensamble.tiff', diff)
     print('Predicting process have done!')
 
 
@@ -120,26 +131,26 @@ def submit_formation(pred, name_list, image_size):
 if __name__ == "__main__":
 
     ## 分割数据
-    file_name = '../land/data/preliminary/quickbird2015.tif'
-    im_2015 = load_testing_data(file_name)
-    file_name = '../land/data/preliminary/quickbird2017.tif'
-    im_2017 = load_testing_data(file_name)
-
-    split_image(im_2015, './data_{}/test/images/2015/'.format(image_size), image_size)
-    split_image(im_2017, './data_{}/test/images/2017/'.format(image_size), image_size)
-
-    ## 创建测试数据
-    images_list_2015 = np.array(os.listdir('./data_{}/test/images/2015/'.format(image_size)))
-    images_list_2017 = np.array(os.listdir('./data_{}/test/images/2017/'.format(image_size)))
-    reg = r'[0-9]{0,2}_[0-9]{0,2}_[0-9]{3}_.jpg'
-    with open('./data_{}/test/test_2015.txt'.format(image_size), 'w') as f:
-        for line in images_list_2015:
-            if re.match(reg, line):
-                f.write('2015/'+line+'\n')
-    with open('./data_{}/test/test_2017.txt'.format(image_size), 'w') as f:
-        for line in images_list_2015:
-            if re.match(reg, line):
-                f.write('2017/'+line+'\n')
-    # tf.app.run()
+    # file_name = '../land/data/preliminary/quickbird2015.tif'
+    # im_2015 = load_testing_data(file_name)
+    # file_name = '../land/data/preliminary/quickbird2017.tif'
+    # im_2017 = load_testing_data(file_name)
+    #
+    # split_image(im_2015, './data_{}/test/images/2015/'.format(image_size), image_size)
+    # split_image(im_2017, './data_{}/test/images/2017/'.format(image_size), image_size)
+    #
+    # ## 创建测试数据
+    # images_list_2015 = np.array(os.listdir('./data_{}/test/images/2015/'.format(image_size)))
+    # images_list_2017 = np.array(os.listdir('./data_{}/test/images/2017/'.format(image_size)))
+    # reg = r'[0-9]{0,2}_[0-9]{0,2}_[0-9]{3}_.jpg'
+    # with open('./data_{}/test/test_2015.txt'.format(image_size), 'w') as f:
+    #     for line in images_list_2015:
+    #         if re.match(reg, line):
+    #             f.write('2015/'+line+'\n')
+    # with open('./data_{}/test/test_2017.txt'.format(image_size), 'w') as f:
+    #     for line in images_list_2015:
+    #         if re.match(reg, line):
+    #             f.write('2017/'+line+'\n')
+    tf.app.run()
 
 

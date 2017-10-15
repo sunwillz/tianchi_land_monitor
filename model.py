@@ -81,6 +81,7 @@ def make_fcn_resnet(input_shape, nb_labels, use_pretraining, freeze_base):
     c16 = Conv2D(nb_labels, (1, 1), name='conv_labels_16')(x16)
     c8 = Conv2D(nb_labels, (1, 1), name='conv_labels_8')(x8)
 
+    ## 采用双线性插值法调整图像大小，http://www.cnblogs.com/zzw-in/p/Bilinear_interpolation.html
     def resize_bilinear(images):
         return tf.image.resize_bilinear(images, [nb_rows, nb_cols])
 

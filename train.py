@@ -11,7 +11,7 @@ from model import *
 learning_rate = 1e-5  # 学习率
 decay = 0
 batch_size = 8
-valid_batch_size = 100  # 验证集样本数
+valid_batch_size = 8  # 验证集样本数
 epochs = 10  # 训练轮数
 
 model_name = 'deeplabv2_model_{}.h5'.format(image_size)
@@ -133,14 +133,14 @@ def main(args):
     # plt.legend(['train', 'test'], loc='upper left')
     # plt.show()
 
+    model.save_weights(save_path + model_name)
+    print 'model saved at ', save_path + model_name
+
     loss, f1_score, accuracy = model.evaluate(test_images, test_annotations, verbose=0)
 
     print('Test loss:', loss)
     print('Test f1_score:', f1_score)
     print('Test accuracy:', accuracy)
-
-    model.save_weights(save_path + model_name)
-    print 'model saved at ', save_path + model_name
 
     print('Test image shape:', test_images.shape, test_images.max())
     print('Test label shape:', test_annotations.shape, test_annotations.max())

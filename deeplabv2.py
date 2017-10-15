@@ -12,7 +12,7 @@ import warnings
 import theano.tensor as T
 from keras import backend as K
 from keras.models import Model
-from keras.layers import (Input, Reshape, Activation, Conv2D, AtrousConvolution2D, MaxPooling2D, Add, ZeroPadding2D, Dropout, Lambda)
+from keras.layers import (Input, Reshape, Activation, Conv2D, MaxPooling2D, Add, ZeroPadding2D, Dropout, Lambda)
 from keras.layers.core import Layer, InputSpec
 from keras.utils.layer_utils import convert_all_kernels_in_model
 from keras.utils.data_utils import get_file
