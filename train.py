@@ -5,16 +5,17 @@ train.py:训练模型
 import argparse
 import keras
 from keras.callbacks import ReduceLROnPlateau
+from deeplabv2 import *
 from data_process import *
 from model import *
 
 learning_rate = 1e-5  # 学习率
 decay = 0
 batch_size = 8
-valid_batch_size = 8  # 验证集样本数
+valid_batch_size = 100  # 验证集样本数
 epochs = 10  # 训练轮数
 
-model_name = 'deeplabv2_model_{}.h5'.format(image_size)
+model_name = 'resnet_model_{}.h5'.format(image_size)
 training_dir = './data_{}/'.format(image_size)
 train_file = 'train.txt'
 validation_dir = './data_{}/'.format(image_size)
@@ -86,22 +87,22 @@ def main(args):
     print 'validation max:', valid_images.max()
     print 'validation lable max:', valid_annotations.max()
 
-    # model = make_fcn_resnet(input_shape=(image_size, image_size, image_channel),
-    #                         nb_labels=label_channel,
-    #                         use_pretraining=True,
-    #                         freeze_base=False
-    #                         )
-    model = DeeplabV2(input_shape=(image_size, image_size, image_channel),
-                      classes=label_channel,
-                      weights=None,
-                      )
+    model = make_fcn_resnet(input_shape=(image_size, image_size, image_channel),
+                            nb_labels=label_channel,
+                            use_pretraining=True,
+                            freeze_base=False
+                            )
+    # model = DeeplabV2(input_shape=(image_size, image_size, image_channel),
+    #                   classes=label_channel,
+    #                   weights=None,
+    #                   )
     if os.path.exists(save_path + model_name):
         model.load_weights(save_path + model_name)
         print 'model restored from ', save_path, model_name
     adam = keras.optimizers.Adam(lr=args.learning_rate, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
     model.compile(loss=keras.losses.categorical_crossentropy,
                   optimizer=adam,
-                  metrics=[f1, 'accuracy'])
+                  metrics=['accuracy', f1])
     # 学习率衰减
     reduce_lr = ReduceLROnPlateau(monitor='val_f1',
                                   factor=0.1,
@@ -136,7 +137,7 @@ def main(args):
     model.save_weights(save_path + model_name)
     print 'model saved at ', save_path + model_name
 
-    loss, f1_score, accuracy = model.evaluate(test_images, test_annotations, verbose=0)
+    loss, f1_score, accuracy = model.evaluate(test_images, test_annotations, batch_size=4, verbose=0)
 
     print('Test loss:', loss)
     print('Test f1_score:', f1_score)
@@ -146,11 +147,8 @@ def main(args):
     print('Test label shape:', test_annotations.shape, test_annotations.max())
 
     # 测试集预测结果可视化
-    pred = model.predict(test_images)
+    pred = model.predict(test_images, batch_size=4)
 
-    # pred.shape(10, 224, 224, 2)
-    # Test_images.shape(10, 224, 224, 3)
-    # Test_annotations.shape(10, 224, 224, 2)
     print('pred:', pred.shape, pred.max())
     print('Test_images:', test_images.shape, test_images.max())
     print('Test_annotations:', test_annotations.shape, test_annotations.max())

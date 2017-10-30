@@ -14,9 +14,9 @@ from keras.utils.np_utils import to_categorical
 from scipy import misc
 import re
 
-image_size = 256  # 输入图像尺寸大小
+image_size = 224  # 输入图像尺寸大小
 image_channel = 3  # 输入图像通道数
-label_size = 256  # 输出图像尺寸大小
+label_size = 224  # 输出图像尺寸大小
 label_channel = 2  # 输出图像通道数
 n_classes = 2
 
@@ -114,7 +114,7 @@ def load_testing_data(file_name):
 
 
 # 这个函数将小的三通道JPG图片拼接成大的图片
-def concat_jpg_to_largefile(image_dir, to_dir, to_name, flag=False):
+def concat_jpg_to_largefile(image_dir, to_dir, to_name):
     if os.path.exists(os.path.join(to_dir, to_name)):
         return pltimage.imread(os.path.join(to_dir, to_name))
 
@@ -140,15 +140,7 @@ def concat_jpg_to_largefile(image_dir, to_dir, to_name, flag=False):
             fromImage = Image.open(os.path.join(image_dir, fname))
             fromImage = np.array(fromImage)
             toarray[i*little_image_width:i*little_image_width+fromImage.shape[0], j*little_image_height:j*little_image_height+fromImage.shape[1]:] = fromImage
-    ## 将一部分的标注数据和2017年的标注图像结合
     toarray = toarray[:5106, :, :]
-    if flag:
-        biaozhu = tiff.imread('../land/data/result/submit.tiff') #shape=(5106,15106)
-        toarray = toarray[:, :, 0]
-        biaozhu = biaozhu[:5106, :14400]
-        ret = ((toarray > 0) | (biaozhu > 1)).astype(np.uint8)
-        ret = ret.reshape([5106, 14400, 1])
-        toarray = np.repeat(ret, 3, axis=2)
     misc.imsave(os.path.join(to_dir, to_name), toarray)
     return toarray
 
@@ -176,7 +168,7 @@ def split_image(img, to_dir, image_size):
     :return:
     """
 
-    for i in range(len(img) / image_size+1):
+    for i in range(len(img) / image_size):
         for j in range(len(img[0]) / image_size):
             im_name = str(i) + '_' + str(j) + '_' + str(image_size) + '_.jpg'
             cv2.imwrite(to_dir + im_name, scale_percentile(
@@ -211,13 +203,13 @@ if __name__ == '__main__':
     # image_2015 = concat_jpg_to_largefile('./label/2015/', to_dir, '2015.jpg')
     # print image_2015.shape, image_2015.max()##(5106, 14400, 3),
     #
-    # image_2017 = concat_jpg_to_largefile('./label/2017/', to_dir, '2017_with_biaozhu.jpg', flag=True)
+    # image_2017 = concat_jpg_to_largefile('./label/2017/', to_dir, '2017.jpg')
     # print image_2017.shape, image_2017.max()
     # assert image_2015.shape == image_2017.shape
     #
-    # file_name = '../land/data/preliminary/quickbird2015.tif'
+    # file_name = './quickbird2015.tif'
     # im_2015 = load_testing_data(file_name)
-    # file_name = '../land/data/preliminary/quickbird2017.tif'
+    # file_name = './quickbird2017.tif'
     # im_2017 = load_testing_data(file_name)
     #
     # split_image(im_2015[:, :14400, :], to_dir+'images/2015/', image_size)

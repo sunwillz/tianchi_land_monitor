@@ -18,6 +18,8 @@ from keras.utils.layer_utils import convert_all_kernels_in_model
 from keras.utils.data_utils import get_file
 from keras.engine.topology import get_source_inputs
 import tensorflow as tf
+from crf import dense_crf
+from crf_layers import CrfLayer
 
 
 class BilinearUpsampling(Layer):
@@ -26,6 +28,7 @@ class BilinearUpsampling(Layer):
         upsampling: Integer > 0. The upsampling ratio for h and w.
         name: the name of the layer
     """
+
     def __init__(self, upsampling, name='', **kwargs):
         self.name = name
         self.upsampling = upsampling
@@ -44,7 +47,7 @@ class BilinearUpsampling(Layer):
         return output
 
     def get_output_shape_for(self, input_shape):
-        return None, input_shape[1], input_shape[2]*self.upsampling, input_shape[3]*self.upsampling
+        return None, input_shape[1], input_shape[2] * self.upsampling, input_shape[3] * self.upsampling
 
 
 TH_WEIGHTS_PATH = 'http://imagelab.ing.unimore.it/files/deeplabV2_weights/deeplabV2_weights_th.h5'
@@ -203,7 +206,6 @@ def DeeplabV2(input_shape, upsampling=8, apply_softmax=True,
     else:
         inputs = img_input
 
-    # Create model.
     model = Model(inputs, out, name='deeplabV2')
 
     # load weights
