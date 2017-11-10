@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
-"""DeeplabV2 model for Keras.
+"""
+github开源项目
+DeeplabV2 model for Keras.
 - This model uses VGG16 for encoding.
 # Reference:
 - [DeepLab: Semantic Image Segmentation with Deep Convolutional Nets, Atrous Convolution,
     and Fully Connected CRFs](https://arxiv.org/pdf/1606.00915v1.pdf)
 
 https://github.com/DavideA/deeplabv2-keras
+
 """
 
 import warnings
@@ -18,8 +21,6 @@ from keras.utils.layer_utils import convert_all_kernels_in_model
 from keras.utils.data_utils import get_file
 from keras.engine.topology import get_source_inputs
 import tensorflow as tf
-from crf import dense_crf
-from crf_layers import CrfLayer
 
 
 class BilinearUpsampling(Layer):

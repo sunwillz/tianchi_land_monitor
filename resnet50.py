@@ -7,7 +7,6 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import warnings
-import numpy as np
 from keras import backend as K
 from keras import layers
 from keras.applications.imagenet_utils import (_obtain_input_shape)
@@ -29,7 +28,7 @@ from keras.models import Model
 from keras.utils import layer_utils
 from keras.utils.data_utils import get_file
 from keras.preprocessing import image
-
+import numpy as np
 WEIGHTS_PATH = 'https://github.com/fchollet/deep-learning-models/releases/download/v0.2/resnet50_weights_tf_dim_ordering_tf_kernels.h5'
 WEIGHTS_PATH_NO_TOP = 'https://github.com/fchollet/deep-learning-models/releases/download/v0.2/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5'
 

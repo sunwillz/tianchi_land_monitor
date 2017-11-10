@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
+"""
+@author:sunwill
 
+基于resnet的fcn模型
+resnet采用在ImageNet的预训练模型，去掉最后一层，经过上采样，输出分割图
+"""
 from keras.models import Model
 from keras.layers import (Input, Activation, Reshape, Conv2D, Lambda, Add)
 import tensorflow as tf
-import keras.backend as K
 from resnet50 import ResNet50
-from crf_layers import CrfLayer
-import numpy as np
 
 FCN_RESNET = 'fcn_resnet'
 n_classes = 2
@@ -44,14 +46,6 @@ def make_fcn_resnet(input_shape, nb_labels, use_pretraining, freeze_base):
     x = Reshape((nb_rows * nb_cols, nb_labels))(m)
     x = Activation('softmax')(x)
     x = Reshape((nb_rows, nb_cols, nb_labels))(x)
-
-    # output = CrfLayer(image_dims=(nb_rows, nb_cols),
-    #                   num_classes=n_classes,
-    #                   theta_alpha=160.,
-    #                   theta_beta=3.,
-    #                   theta_gamma=3.,
-    #                   num_iterations=10,
-    #                   name='crf')([x, input_tensor])
 
     model = Model(inputs=input_tensor, outputs=x)
 

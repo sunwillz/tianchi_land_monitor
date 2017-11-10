@@ -1,26 +1,32 @@
 # -*- coding: utf-8 -*-
 """
+@author:sunwill
+
 train.py:训练模型
 """
 import argparse
 import keras
 from keras.callbacks import ReduceLROnPlateau
 from deeplabv2 import *
-from data_process import *
 from model import *
+
+
+import warnings
+warnings.filterwarnings("ignore")
+from data_process import *
 
 learning_rate = 1e-5  # 学习率
 decay = 0
 batch_size = 8
 valid_batch_size = 100  # 验证集样本数
 epochs = 10  # 训练轮数
-
-model_name = 'resnet_model_{}.h5'.format(image_size)
-training_dir = './data_{}/'.format(image_size)
+image_size = 256
+model_name = 'deeplabv2_model_{}.h5'.format(image_size)
+training_dir = './data_{}/quarterfinals/'.format(image_size)
 train_file = 'train.txt'
-validation_dir = './data_{}/'.format(image_size)
+validation_dir = './data_{}/quarterfinals/'.format(image_size)
 valid_file = 'valid.txt'
-save_path = './logs/'  # 训练日志和模型存放目录
+save_path = './logs2/'  # 训练日志和模型存放目录
 result_dir = './result/'  # 预测结果存放目录
 
 
@@ -32,7 +38,7 @@ def get_arguments():
     """
     parser = argparse.ArgumentParser(description="resnet based fcn Network")
     parser.add_argument("--epochs", type=int, default=epochs)
-    parser.add_argument("--image-size", type=int, default=image_size)
+    parser.add_argument("--image_size", type=int, default=image_size)
     parser.add_argument("--learning_rate", type=float, default=learning_rate)
     return parser.parse_args()
 
@@ -71,31 +77,32 @@ def main(args):
                                    image_channel=image_channel,
                                    label_channel=label_channel
                                    )
-    validation_data = Dataset_reader(dataset_dir=validation_dir,
-                                     file_name=valid_file,
-                                     image_size=image_size,
-                                     image_channel=image_channel,
-                                     label_channel=label_channel
-                                     )
+    # validation_data = Dataset_reader(dataset_dir=validation_dir,
+    #                                  file_name=valid_file,
+    #                                  image_size=image_size,
+    #                                  image_channel=image_channel,
+    #                                  label_channel=label_channel
+    #                                  )
 
     train_images, train_annotations = training_data.get_all_data()
-    valid_images, valid_annotations = validation_data.get_random_batch(valid_batch_size)
-    test_images, test_annotations = validation_data.get_random_batch(valid_batch_size)
+    train_images, train_annotations = data_sample(train_images, train_annotations)
+    valid_images, valid_annotations = training_data.get_random_batch(valid_batch_size)
+    test_images, test_annotations = training_data.get_random_batch(valid_batch_size)
     print 'training max:', train_images.max()
     print 'training label max: ', train_annotations.max()
 
     print 'validation max:', valid_images.max()
     print 'validation lable max:', valid_annotations.max()
 
-    model = make_fcn_resnet(input_shape=(image_size, image_size, image_channel),
-                            nb_labels=label_channel,
-                            use_pretraining=True,
-                            freeze_base=False
-                            )
-    # model = DeeplabV2(input_shape=(image_size, image_size, image_channel),
-    #                   classes=label_channel,
-    #                   weights=None,
-    #                   )
+    # model = make_fcn_resnet(input_shape=(image_size, image_size, image_channel),
+    #                         nb_labels=label_channel,
+    #                         use_pretraining=True,
+    #                         freeze_base=False
+    #                         )
+    model = DeeplabV2(input_shape=(image_size, image_size, image_channel),
+                      classes=label_channel,
+                      weights=None,
+                      )
     if os.path.exists(save_path + model_name):
         model.load_weights(save_path + model_name)
         print 'model restored from ', save_path, model_name
@@ -131,7 +138,7 @@ def main(args):
     # plt.title('model loss')
     # plt.ylabel('loss')
     # plt.xlabel('epoch')
-    # plt.legend(['train', 'test'], loc='upper left')
+    # plt.legend(['train', 'test_phase_1_prelinary_2'], loc='upper left')
     # plt.show()
 
     model.save_weights(save_path + model_name)
