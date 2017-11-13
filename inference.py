@@ -2,7 +2,7 @@
 """
 @author:sunwill
 
-predict the test_phase_1_prelinary_2 data
+predict the testing data
 """
 
 from train import *
@@ -13,13 +13,13 @@ width = 15106
 testing_file_2015 = 'test_2015.txt'
 testing_file_2017 = 'test_2017.txt'
 
-model_list = ['deeplabv2_model.h5', 'resnet_model.h5']
+model_list = ['resnet_model.h5']
 
 
 def main(argv=None):
 
-    pred_2015_summary = np.empty(shape=(5, height, width))
-    pred_2017_summary = np.empty(shape=(5, height, width))
+    pred_2015_summary = np.empty(shape=(2, height, width))
+    pred_2017_summary = np.empty(shape=(2, height, width))
     i = 0
     for model_name in model_list:
         for image_size in [160, 224, 256]:
@@ -111,11 +111,11 @@ def main(argv=None):
     pred_2017 = (pred_2017 > 0.5).astype(np.uint8)
     assert ((pred_2015 > pred_2015.min()) & (pred_2015 < pred_2015.max())).sum() == 0
     assert ((pred_2017 > pred_2017.min()) & (pred_2017 < pred_2017.max())).sum() == 0
-    tiff.imsave('pred_2015_building.tiff', pred_2015)
-    tiff.imsave('pred_2017_building.tiff', pred_2017)
+    # tiff.imsave('pred_2015_building.tiff', pred_2015)
+    # tiff.imsave('pred_2017_building.tiff', pred_2017)
     diff = ((pred_2017 == 1) & (pred_2015 == 0)).astype(np.uint8)
     print diff.shape, diff.mean(), diff.max()
-    tiff.imsave('submit_two_model.tiff', diff)
+    tiff.imsave('submit_resnet_model.tiff', diff)
     print('Predicting process have done!')
 
 
@@ -154,7 +154,7 @@ if __name__ == "__main__":
     # ## 创建测试数据
     # images_list_2015 = np.array(os.listdir('./data_{}/test_quarterfinals/images/2015/'.format(image_size)))
     # images_list_2017 = np.array(os.listdir('./data_{}/test_quarterfinals/images/2017/'.format(image_size)))
-    # reg = r'[0-9]{0,2}_[0-9]{0,2}_[0-9]{3}_.jpg'
+    # reg = r'[0-9]{0,3}_[0-9]{0,3}_[0-9]{3}_.jpg'
     # with open('./data_{}/test_quarterfinals/test_2015.txt'.format(image_size), 'w') as f:
     #     for line in images_list_2015:
     #         if re.match(reg, line):

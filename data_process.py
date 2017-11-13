@@ -14,7 +14,7 @@ from scipy import misc
 import re
 from PIL import ImageEnhance
 
-image_size = 256  # 输入图像尺寸大小
+image_size = 224  # 输入图像尺寸大小
 image_channel = 3  # 输入图像通道数
 label_size = image_size  # 输出图像尺寸大小
 label_channel = 2  # 输出图像通道数
@@ -65,6 +65,8 @@ class Dataset_reader:
                 label = (label[:, :, 0] > 0).astype(np.uint8) # 取其中一个通道
             else:
                 label = (label > 0).astype(np.uint8)
+            # label_arr = np.zeros(shape=[self.image_size, self.image_size])
+            # label_arr[:label_arr.shape[0], :label_arr.shape[1]] = label
             label = to_categorical(label, num_classes=self.label_channel)
             label = label.reshape([self.image_size, self.image_size, self.label_channel])
             self.labels.append(label)
@@ -144,7 +146,7 @@ def concat_jpg_to_largefile(image_dir, to_dir, to_name):
             fromImage = Image.open(os.path.join(image_dir, fname))
             fromImage = np.array(fromImage)
             toarray[i*little_image_width:i*little_image_width+fromImage.shape[0], j*little_image_height:j*little_image_height+fromImage.shape[1]:] = fromImage
-    toarray = toarray[:3840, :14400, :]
+    toarray = toarray[:4000, :15106, :]
     misc.imsave(os.path.join(to_dir, to_name), toarray)
     return toarray
 
@@ -212,10 +214,10 @@ def split_image_overlap_window(img, to_dir):
 
 
 if __name__ == '__main__':
-    ## 将(960,960,3)的小图片拼接成(3840,14400,3)的大图片
+    ## 将(960,960,3)的小图片拼接成(4000,15106,3)的大图片
     to_dir = './data_{}/quarterfinals/'.format(image_size)
     label_2015 = concat_jpg_to_largefile('./label/quarterfinals/2015/', to_dir, '2015.jpg')
-    print label_2015.shape, label_2015.max()##(3840, 14400, 3),
+    print label_2015.shape, label_2015.max()##(4000, 15106, 3),
 
     label_2017 = concat_jpg_to_largefile('./label/quarterfinals/2017/', to_dir, '2017.jpg')
     print label_2017.shape, label_2017.max()
@@ -228,8 +230,8 @@ if __name__ == '__main__':
     print im_2015.shape
     print im_2017.shape
 
-    split_image(im_2015[:3840, :14400, :], to_dir+'images/2015/', image_size)
-    split_image(im_2017[:3840, :14400, :], to_dir+'images/2017/', image_size)
+    split_image(im_2015, to_dir+'images/2015/', image_size)
+    split_image(im_2017, to_dir+'images/2017/', image_size)
     split_image(label_2015, to_dir+'labels/2015/', image_size)
     split_image(label_2017, to_dir+'labels/2017/', image_size)
 
@@ -255,7 +257,7 @@ if __name__ == '__main__':
     print train.shape
     valid = common[int(common.shape[0]*0.8):]
     print valid.shape
-    reg = r'([0-9]{4})\/[0-9]{0,2}_[0-9]{0,2}_[0-9]{3}_.jpg'
+    reg = r'([0-9]{4})\/[0-9]{0,3}_[0-9]{0,3}_[0-9]{3}_.jpg'
     with open(to_dir+'train.txt', 'w') as f:
         for line in train:
             if re.match(reg, line):

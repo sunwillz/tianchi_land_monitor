@@ -2,7 +2,7 @@
 """
 @author:sunwill
 
-train.py:训练模型
+train_A.py:训练模型
 """
 import argparse
 import keras
@@ -26,7 +26,7 @@ training_dir = './data_{}/quarterfinals/'.format(image_size)
 train_file = 'train.txt'
 validation_dir = './data_{}/quarterfinals/'.format(image_size)
 valid_file = 'valid.txt'
-save_path = './logs2/'  # 训练日志和模型存放目录
+save_path = './logs4/'  # 训练日志和模型存放目录
 result_dir = './result/'  # 预测结果存放目录
 
 
@@ -138,7 +138,7 @@ def main(args):
     # plt.title('model loss')
     # plt.ylabel('loss')
     # plt.xlabel('epoch')
-    # plt.legend(['train', 'test_phase_1_prelinary_2'], loc='upper left')
+    # plt.legend(['train_A', 'test_phase_1_prelinary_2'], loc='upper left')
     # plt.show()
 
     model.save_weights(save_path + model_name)
